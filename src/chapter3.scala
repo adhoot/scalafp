@@ -110,15 +110,45 @@ object List {
   def len_fl[A](l: List[A]): Int = foldLeft(l, 0)((b,_) => b+1)
 
   def reverse_fl2[A](l: List[A]): List[A] = foldLeft(l, List[A]())((acc,h) => Cons(h,acc))
-
-  def fr_from_fl[A, B](as: List[A], z: B)(f: (A, B) => B): B = {
-    foldLeft(l, z)((a, b) => f(b, a))
+//
+//  def fl_from_fr[A, B](as: List[A], z: B)(f: (B, A) => B): B = {
+//    foldRight(as, )(a:A, )
+//  }
+//
+  def fr_from_fl1[A, B](as: List[A], z: B)(f: (A, B) => B): B = {
+    def g(next:B => B, x:A) : B => B = {
+      (p:B) => next(f(x, p))
+    }
+    foldLeft(as, (x:B) => x)(g)(z)
   }
+
+  def fr_from_fl[A, B](as: List[A], z: B)(f: (A, B) => B): B =
+    foldLeft(as, (x:B) => x)( (next:B => B, x:A)  => (p:B) => next(f(x, p)) )(z)
+
+  def fl_from_fr[A, B](as: List[A], z: B)(f: (B, A) => B): B =
+    foldRight(as, (x:B) => x)((x, next)=>(p) =>next(f(p,x)))(z)
+
 
   def append_fr[A](a1: List[A], a2: List[A]): List[A] = foldRight(a1, a2)((x,
                                                                            as) => Cons(x, as))
 
-  def map[A, B](l: List[A])(f: A => B): List[B] = sys.error("todo")
+  def concat[A](lists: List[List[A]]): List[A] = foldRight(lists,
+    List[A]())((l, ls) => append_fr(l, ls))
+
+  def addOne(l:List[Int]):List[Int] = l match {
+    case Nil => Nil
+    case Cons(h, t) => Cons(h + 1, addOne(t))
+  }
+
+  def doubleToString(l:List[Double]):List[String] = l match {
+    case Nil => Nil
+    case Cons(h, t) => Cons(h.toString(), doubleToString(t))
+  }
+
+  def map[A, B](l: List[A])(f: A => B): List[B] = l match {
+    case Nil => Nil
+    case Cons(h, t) => Cons(f(h), map(t)(f))
+  }
 }
 object runner {
   def main(args:Array[String]) = {
@@ -150,7 +180,19 @@ object runner {
 
     println("reverse "  + List.reverse_fl2(l))
 
-    println("append " + List.append(l, List(-1, -2, -3)))
+    val l2: List[Int] = List(-1, -2, -3)
+    println("append " + List.append(l, l2))
 
+    println("concat " + List.concat(List(l, l2)))
+
+    println("foldRight concat" + List.foldRight(l, "")((x:Int,
+                                                       s:String) =>(s + x.toString())))
+    println("foldRightUsingFoldLeft concat" + List.fr_from_fl(l, "")((x:Int,
+                                                       s:String) =>(s + x.toString())))
+    println("foldLeftUsingFoldRight concat" + List.fl_from_fr(l,
+      "")((s:String, x:Int) =>(s + x.toString())))
+
+    println("AddOne " + List.addOne(l))
+    println("DoubleToString " + List.doubleToString(dl))
   }
 }
