@@ -135,20 +135,40 @@ object List {
   def concat[A](lists: List[List[A]]): List[A] = foldRight(lists,
     List[A]())((l, ls) => append_fr(l, ls))
 
-  def addOne(l:List[Int]):List[Int] = l match {
+  def addOne(l:List[Int]):List[Int] =
+    foldRight(l, Nil:List[Int])((x, lt) => Cons(x+1, lt))
+
+
+  def doubleToString(l:List[Double]):List[String] =
+    foldRight(l, Nil:List[String])((h, t) => Cons(h.toString(), t))
+
+  def map[A, B](l: List[A])(f: A => B): List[B] =
+    foldRight(l, Nil:List[B])((h, t) => Cons(f(h), t))
+
+  def filter[A](as: List[A])(f: A => Boolean): List[A] =
+    foldRight(as, Nil:List[A])((h, t) => if (f(h)) Cons(h, t) else t)
+
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] =
+    foldRight(as, Nil:List[B])((h, t) => append(f(h), t))
+
+  def filter_via_flatmap[A](as: List[A])(f: A => Boolean): List[A] =
+    flatMap(as)((a) => if (f(a)) List(a) else Nil)
+
+  def addLists(as: List[Int], bs: List[Int]):List[Int] = as match {
     case Nil => Nil
-    case Cons(h, t) => Cons(h + 1, addOne(t))
+    case Cons(h,t ) => bs match {
+      case Cons(h2, t2) => Cons(h + h2, addLists(t, t2))
+    }
   }
 
-  def doubleToString(l:List[Double]):List[String] = l match {
-    case Nil => Nil
-    case Cons(h, t) => Cons(h.toString(), doubleToString(t))
+  def zipWith[T,U,V](as: List[T], bs:List[U])(f: (T, U) => V): List[V] =
+    (as, bs) match {
+    case (Nil, _) => Nil
+    case (_, Nil) => Nil
+    case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2)(f))
   }
 
-  def map[A, B](l: List[A])(f: A => B): List[B] = l match {
-    case Nil => Nil
-    case Cons(h, t) => Cons(f(h), map(t)(f))
-  }
+
 }
 object runner {
   def main(args:Array[String]) = {
@@ -194,5 +214,12 @@ object runner {
 
     println("AddOne " + List.addOne(l))
     println("DoubleToString " + List.doubleToString(dl))
+
+    println("Odd numbers " + List.filter(l)(x => x % 2 == 1))
+    println("Odd numbers using filter via flatmap " +
+      List.filter_via_flatmap(l)(x=> x % 2 ==1))
+
+    println("List ZipWith " + List.zipWith(l, dl)(
+      (u:Int, v: Double) => u.toString() + v.toString()) )
   }
 }
