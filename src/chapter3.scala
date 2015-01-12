@@ -1,5 +1,7 @@
 package fpinscala.datastructures
 
+import scala.annotation.tailrec
+
 sealed trait List[+A] // `List` data type, parameterized on a type, `A`
 case object Nil extends List[Nothing] // A `List` data constructor representing the empty list
 case class Cons[+A](head: A, tail: List[A]) extends List[A] // Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`, which may be `Nil` or another `Cons`.
@@ -168,7 +170,18 @@ object List {
     case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2)(f))
   }
 
-
+  @tailrec
+  def hasSubsequence[A](subj: List[A], pattern: List[A]): Boolean = pattern match {
+    case Nil => true
+    case Cons(hp, tp) => subj match {
+      case Nil => false
+      case Cons(hj, tj) =>
+        if (hp.equals(hj))
+          hasSubsequence(tj, tp)
+        else 
+          hasSubsequence(tj, pattern)
+    }
+  }
 }
 object runner {
   def main(args:Array[String]) = {
@@ -221,5 +234,9 @@ object runner {
 
     println("List ZipWith " + List.zipWith(l, dl)(
       (u:Int, v: Double) => u.toString() + v.toString()) )
+
+    println("HasSubsequene (2,3,4)" + List.hasSubsequence(l, List(2, 3, 4)) )
+    println("HasSubsequene (2,3,5, 4)" + List.hasSubsequence(l, List(2, 3, 5, 4
+    )) )
   }
 }
