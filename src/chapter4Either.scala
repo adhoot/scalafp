@@ -19,12 +19,23 @@ sealed trait Either[+E,+A] {
     case Right(a:A) => Right(a)
   }
 
-  // def map2[EE >: E, B, C](b: Either[EE, B])(f: (A, B) => C): Either[EE, C] = this flatMap(a => b map (bi => f(a, bi)))
+  def map2[EE >: E, B, C](b: Either[EE, B])(f: (A, B) => C): Either[EE, C] = this flatMap(a => b map (bi => f(a, bi)))
   def map2_comprehension[EE >: E, B, C](b: Either[EE, B])(f: (A, B) => C): Either[EE, C] =
     for {
       ai <- this
       bi <- b
     } yield f(ai, bi)
+
+  def sequence[E, A](as:List[Either[E, A]]): Either[E, List[A]] = as.foldRight[Either[E, List[A]]](Right(Nil))((x,y) => x.map2(y)(_::_))
+
+  def traverse[E, A, B](as:List[A])(
+    f: A => Either[E, B]): Either[E, List[B]] = as.foldRight[Either[E, List[B]]](Right(Nil))(
+      (x, y) => f(x) match {
+        case Left(e:E) => Left(e)
+        case Right(b:B) => y map (b::_)
+      })
+
+  def sequence_using_traverse[E, A](as:List[Either[E, A]]): Either[E, List[A]] = traverse(as)(x => x)
 }
 case class Left[+E](get: E) extends Either[E,Nothing]
 case class Right[+A](get: A) extends Either[Nothing,A]
